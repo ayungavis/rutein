@@ -71,8 +71,6 @@ identifier_name:
     - at
 
 custom_rules:
-  # PRD section 13, rule 1. match_kinds keeps this off string literals and URLs,
-  # so only real comment tokens are considered.
   unauthorized_comment:
     name: "Unauthorized comment"
     regex: '(?://(?!\s*(?:swiftlint:|MARK:|tradeoff:|unsafe:|swift-tools-version:))|/\*)'
