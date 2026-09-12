@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "RuteinKit", targets: ["RuteinKit"]),
     ],
     targets: [
-        .target(name: "RuteinKit"),
+        .target(name: "RuteinKit", resources: [.process("Resources")]),
         .testTarget(name: "RuteinKitTests", dependencies: ["RuteinKit"]),
     ],
 )

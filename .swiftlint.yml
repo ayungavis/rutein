@@ -80,6 +80,12 @@ custom_rules:
       - comment
       - doccomment
 
+  localized_text_needs_bundle:
+    name: "Localized Text needs a bundle"
+    regex: 'Text\("[^"]*"\)'
+    message: "Text inside the package must resolve bundle: .module, or use Text(verbatim:) when the string is not translatable."
+    severity: error
+
   no_any_view:
     name: "No AnyView"
     regex: '\bAnyView\b'

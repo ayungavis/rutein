@@ -6,11 +6,15 @@ public struct RootView: View {
     public var body: some View {
         NavigationStack {
             ContentUnavailableView {
-                Label("Your routes", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+                Label {
+                    Text("library.empty.title", bundle: .module)
+                } icon: {
+                    Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+                }
             } description: {
-                Text("Import a GPX file to explore distance, elevation, and checkpoints.")
+                Text("library.empty.description", bundle: .module)
             }
-            .navigationTitle("Rutein")
+            .navigationTitle(Text(verbatim: "Rutein"))
         }
     }
 }

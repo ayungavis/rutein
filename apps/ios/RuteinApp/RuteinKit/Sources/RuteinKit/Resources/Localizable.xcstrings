@@ -1,0 +1,40 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "library.empty.title": {
+      "comment": "Headline on the empty route library.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your routes"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rute kamu"
+          }
+        }
+      }
+    },
+    "library.empty.description": {
+      "comment": "Empty route library. Says what imprting a GPX file gets the runner.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import a GPX file to explore distance, elevation and checkpoints."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impor berkas GPX untuk menjelajahi jarak, elevasi, dan checkpoint."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
