@@ -12,7 +12,7 @@ TEST_FLAGS ?=
 .PHONY: help hooks ios-generate ios-format ios-lint ios-test ios-build ios-run ios-validate
 
 help:
-	@echo "Rutein — GPX route preparation for trail runners. iOS only, no backend."
+	@echo "Rutein — GPX route preparation for trail runners."
 	@echo
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -38,14 +38,11 @@ ios-lint: ## SwiftLint in strict mode
 ios-test: ## Unit tests via swift test — no simulator needed
 	swift test --package-path $(PACKAGE) $(TEST_FLAGS)
 
-# xcodebuild output is huge — log it, print the tail only when the build fails.
 ios-build: ios-generate ## Build for the iPhone simulator
 	@xcodebuild -project $(PROJECT) -scheme $(SCHEME) -destination '$(DEST)' build > $(BUILD_LOG) 2>&1 \
 		&& grep -E '^\*\* BUILD' $(BUILD_LOG) \
 		|| (tail -30 $(BUILD_LOG); exit 1)
 
-# Bundle id is read back from the build settings rather than repeated here, so
-# it cannot drift from project.yaml.
 ios-run: ios-build ## Build, install, and launch on the booted simulator
 	@SETTINGS=$$(xcodebuild -project $(PROJECT) -scheme $(SCHEME) -destination '$(DEST)' -showBuildSettings 2>/dev/null); \
 	APP=$$(echo "$$SETTINGS" | awk '$$1 == "BUILT_PRODUCTS_DIR" { print $$3; exit }'); \

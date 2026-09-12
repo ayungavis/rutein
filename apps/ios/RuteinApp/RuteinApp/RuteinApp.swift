@@ -1,10 +1,11 @@
+import RuteinKit
 import SwiftUI
 
 @main
-struct RuteinAppApp: App {
+struct RuteinApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
     }
 }
