@@ -1,0 +1,57 @@
+name: RuteinApp
+options:
+  bundleIdPrefix: com.ayungavis
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+configFiles:
+  Debug: RuteinApp/Config/Debug.xcconfig
+  Release: RuteinApp/Config/Release.xcconfig
+
+packages:
+  RuteinKit:
+    path: RuteinKit
+
+targets:
+  RuteinApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: RuteinApp
+        excludes:
+          - "Config/**"
+    dependencies:
+      - package: RuteinKit
+        product: RuteinKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ayungavis.RuteinApp
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: 1
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          DEVELOPMENT_TEAM: QHL64K2LPL
+          PROVISIONING_PROFILE_SPECIFIER: RuteinApp Apple Distribution
+    info:
+      path: RuteinApp/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
+        CFBundleLocalizations:
+          - en
+          - id
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    scheme:
+      testTargets:
+        - package: RuteinKit/RuteinKitTests
