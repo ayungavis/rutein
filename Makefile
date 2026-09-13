@@ -5,11 +5,13 @@ PACKAGE    = $(APP_DIR)/RuteinKit
 SPEC       = project.yaml
 DEST       = platform=iOS Simulator,name=iPhone 17 Pro
 BUILD_LOG  = /tmp/rutein-build.log
+ARCHIVE    = /tmp/rutein/RuteinApp.xcarchive
+ARCH_LOG   = /tmp/rutein-archive.log
 TEST_FLAGS ?=
 
 .DEFAULT_GOAL := help
 
-.PHONY: help hooks ios-generate ios-format ios-lint ios-test ios-build ios-run ios-validate
+.PHONY: help hooks ios-generate ios-format ios-lint ios-test ios-build ios-run ios-archive ios-validate
 
 help:
 	@echo "Rutein — GPX route preparation for trail runners."
@@ -49,6 +51,15 @@ ios-run: ios-build ## Build, install, and launch on the booted simulator
 	BUNDLE=$$(echo "$$SETTINGS" | awk '$$1 == "PRODUCT_BUNDLE_IDENTIFIER" { print $$3; exit }'); \
 	xcrun simctl install booted "$$APP/$(SCHEME).app" && \
 	xcrun simctl launch booted "$$BUNDLE"
+
+ios-archive: ios-generate ## Release archive for TestFlight, signed for a real device
+	@rm -rf $(ARCHIVE)
+	@xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
+		-destination 'generic/platform=iOS' -configuration Release \
+		-archivePath $(ARCHIVE) -allowProvisioningUpdates archive > $(ARCH_LOG) 2>&1 \
+		&& grep -E '^\*\* ARCHIVE' $(ARCH_LOG) \
+		|| (tail -40 $(ARCH_LOG); exit 1)
+	@echo "archive at $(ARCHIVE) — open Xcode > Window > Organizer to distribute"
 
 ios-validate: ios-format ios-lint ios-test ios-build ## format → lint → test → build
 	@echo "iOS OK — format, lint, test, build all green"
