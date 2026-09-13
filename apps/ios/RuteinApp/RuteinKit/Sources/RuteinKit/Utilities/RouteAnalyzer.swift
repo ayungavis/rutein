@@ -1,18 +1,27 @@
 public enum RouteAnalyzer {
     @concurrent
     public static func analyse(_ geometry: RouteGeometry) async throws -> RouteSummary {
-        var total = 0.0
+        var distance = 0.0
 
         for segment in geometry.segments {
             for index in segment.indices.dropLast() {
-                total += Haversine.metres(from: segment[index], to: segment[index + 1])
+                distance += Haversine.metres(from: segment[index], to: segment[index + 1])
             }
         }
 
-        guard total > 0 else {
+        guard distance > 0 else {
             throw AppError.geometry
         }
 
-        return RouteSummary(distanceMetres: total)
+        let elevation = ElevationAnalysis.of(geometry)
+
+        return RouteSummary(
+            distanceMetres: distance,
+            elevationCoverage: elevation.coverage,
+            ascentMetres: elevation.ascentMetres,
+            descentMetres: elevation.descentMetres,
+            minimumElevationMetres: elevation.minimumMetres,
+            maximumElevationMetres: elevation.maximumMetres,
+        )
     }
 }

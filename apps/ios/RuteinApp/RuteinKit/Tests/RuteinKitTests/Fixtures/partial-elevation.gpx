@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Rutein fixtures" xmlns="http://www.topografix.com/GPX/1/1">
+    <trk>
+        <trkseg>
+            <trkpt lat="0.000" lon="0.000"><ele>100.0</ele></trkpt>
+            <trkpt lat="0.001" lon="0.000"><ele>150.0</ele></trkpt>
+            <trkpt lat="0.002" lon="0.000"></trkpt>
+            <trkpt lat="0.003" lon="0.000"><ele>900.0</ele></trkpt>
+            <trkpt lat="0.004" lon="0.000"><ele>950.0</ele></trkpt>
+        </trkseg>
+    </trk>
+</gpx>
