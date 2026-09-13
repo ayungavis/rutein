@@ -1,0 +1,42 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+    paths: &ios
+      - "apps/ios/**"
+      - "Makefile"
+      - ".swiftlint.yml"
+      - ".swiftformat"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    paths: *ios
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - run: brew install swiftlint swiftformat
+      - run: swiftformat --lint .
+      - run: make ios-lint
+
+  test:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - run: script -q /dev/null make ios-test TEST_FLAGS=--no-parallel
+
+  build:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - run: brew install xcodegen
+      - run: make ios-build DEST='generic/platform=iOS Simulator'

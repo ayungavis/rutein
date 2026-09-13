@@ -52,7 +52,7 @@ ios-run: ios-build ## Build, install, and launch on the booted simulator
 	xcrun simctl install booted "$$APP/$(SCHEME).app" && \
 	xcrun simctl launch booted "$$BUNDLE"
 
-ios-archive: ios-generate ## Release archive for TestFlight, signed for a real device
+ios-archive: ios-generate ## Local Release archive — escape hatch when CI is red
 	@rm -rf $(ARCHIVE)
 	@xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 		-destination 'generic/platform=iOS' -configuration Release \
@@ -60,6 +60,7 @@ ios-archive: ios-generate ## Release archive for TestFlight, signed for a real d
 		&& grep -E '^\*\* ARCHIVE' $(ARCH_LOG) \
 		|| (tail -40 $(ARCH_LOG); exit 1)
 	@echo "archive at $(ARCHIVE) — open Xcode > Window > Organizer to distribute"
+	@echo "normal path is a push to main; see .github/workflows/testflight.yml"
 
 ios-validate: ios-format ios-lint ios-test ios-build ## format → lint → test → build
 	@echo "iOS OK — format, lint, test, build all green"
