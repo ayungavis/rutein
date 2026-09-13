@@ -11,7 +11,7 @@ TEST_FLAGS ?=
 
 .DEFAULT_GOAL := help
 
-.PHONY: help hooks ios-generate ios-format ios-lint ios-test ios-build ios-run ios-archive ios-validate
+.PHONY: help hooks ios-generate ios-format ios-lint ios-previews ios-tokens ios-tokens-check ios-test ios-build ios-run ios-archive ios-validate
 
 help:
 	@echo "Rutein — GPX route preparation for trail runners."
@@ -34,8 +34,24 @@ ios-generate: ## Regenerate RuteinApp.xcodeproj from project.yaml
 ios-format: ## SwiftFormat the whole repo
 	swiftformat .
 
-ios-lint: ## SwiftLint in strict mode
+ios-lint: ios-previews ios-tokens-check ## SwiftLint in strict mode, plus the preview and token checks
 	swiftlint --strict
+
+ios-previews: ## Every *View.swift must declare a #Preview
+	@missing=$$(grep -L '#Preview' $$(find $(PACKAGE)/Sources -name '*View.swift') 2>/dev/null); \
+	if [ -n "$$missing" ]; then \
+		echo "Views without a #Preview:"; \
+		echo "$$missing" | sed 's|^|  |'; \
+		echo "Every SwiftUI view declares one. See CLAUDE.md > Architecture."; \
+		exit 1; \
+	fi; \
+	echo "previews OK — every *View.swift declares a #Preview"
+
+ios-tokens: ## Regenerate Colors.xcassets from docs/design/tokens
+	@python3 tools/generate-colors.py
+
+ios-tokens-check: ## Fail if Colors.xcassets drifted from docs/design/tokens
+	@python3 tools/generate-colors.py --check
 
 ios-test: ## Unit tests via swift test — no simulator needed
 	swift test --package-path $(PACKAGE) $(TEST_FLAGS)

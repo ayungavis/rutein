@@ -1,6 +1,23 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "library.empty.description": {
+      "comment": "Subtitle under the library headline. Names the two things the app does.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Understand the route. Make your plan."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pahami rutenya. Susun rencanamu."
+          }
+        }
+      }
+    },
     "library.empty.title": {
       "comment": "Headline on the empty route library.",
       "localizations": {
@@ -18,19 +35,36 @@
         }
       }
     },
-    "library.empty.description": {
-      "comment": "Empty route library. Says what imprting a GPX file gets the runner.",
+    "library.import.action": {
+      "comment": "Primary button on the route library. Starts the file picker.",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import a GPX file to explore distance, elevation and checkpoints."
+            "value": "Import GPX"
           }
         },
         "id": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impor berkas GPX untuk menjelajahi jarak, elevasi, dan checkpoint."
+            "value": "Impor GPX"
+          }
+        }
+      }
+    },
+    "library.privacy.footnote": {
+      "comment": "Reassurance under the import button. The app has no backend and no account.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your routes and plans stay on this device."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rute dan rencanamu tersimpan di perangkat ini."
           }
         }
       }
