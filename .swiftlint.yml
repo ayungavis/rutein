@@ -101,4 +101,18 @@ custom_rules:
     message: "Untyped dictionaries are banned in Domain APIs (PRD section 9). Decode into a typed DTO."
     severity: error
 
+  literal_design_token:
+    name: "Literal design token"
+    regex: '\.(?:padding|cornerRadius|shadow)\(\s*-?\d|\.(?:padding|spacing)\(\s*(?:\.\w+\s*,\s*)?-?\d+\s*\)|(?:cornerRadius|radius):\s*-?\d|spacing:\s*-?[1-9]|\bColor\.(?:red|blue|green|black|white|gray|orange|yellow|pink|purple)\b|\.font\(\s*\.system\('
+    message: "Colours, fonts, spacing, corner radii and shadows come from AppColor, AppFont, Spacing, Radius and .appShadow(). A literal here drifts from the design tokens."
+    severity: error
+    excluded: ".*/DesignSystem/.*"
+
+  no_parallel_logging:
+    name: "No parallel logging API"
+    regex: '\bos_log\b|\bOSLog\(|\bLogger\(|\bprint\(|\bdebugPrint\(|\bNSLog\('
+    message: "Logging goes through Log (PRD section 12): do not create a parallel logging API, and never print. Log takes a LogStage, a count and an AppError, so route names and coordinates cannot reach a log through it."
+    severity: error
+    excluded: ".*/Core/Log\\.swift"
+
 reporter: "xcode"

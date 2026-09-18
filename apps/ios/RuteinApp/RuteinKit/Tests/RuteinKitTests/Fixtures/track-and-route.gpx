@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Rutein fixtures" xmlns="http://www.topografix.com/GPX/1/1">
+  <rte>
+    <name>Planned line</name>
+    <rtept lat="0.000" lon="0"><ele>100</ele></rtept>
+    <rtept lat="0.001" lon="0"><ele>140</ele></rtept>
+  </rte>
+  <trk>
+    <name>Recorded line</name>
+    <trkseg>
+      <trkpt lat="0.000" lon="0"><ele>100</ele></trkpt>
+      <trkpt lat="0.001" lon="0"><ele>140</ele></trkpt>
+      <trkpt lat="0.002" lon="0"><ele>180</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

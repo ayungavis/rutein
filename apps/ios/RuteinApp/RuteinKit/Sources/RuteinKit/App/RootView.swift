@@ -1,11 +1,20 @@
 import SwiftUI
 
 public struct RootView: View {
-    public init() {}
+    private let container: AppContainer
+
+    public init(container: AppContainer) {
+        self.container = container
+    }
 
     public var body: some View {
         NavigationStack {
-            RouteLibraryView()
+            RouteLibraryView(container: container)
         }
+        .preferredColorScheme(.light)
     }
+}
+
+#Preview {
+    RootView(container: AppContainer.preview())
 }

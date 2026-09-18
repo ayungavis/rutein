@@ -16,7 +16,7 @@ public enum Haversine {
         return 2 * earthRadiusMetres * asin(min(1, haversine.squareRoot()))
     }
 
-    private static func normalisedDegrees(_ degrees: Double) -> Double {
+    static func normalisedDegrees(_ degrees: Double) -> Double {
         var normalised = degrees
 
         if normalised > 180 {

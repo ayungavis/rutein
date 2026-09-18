@@ -12,7 +12,7 @@ struct ElevationAnalysisTests {
     }
 
     private func summary(_ name: String) async throws -> RouteSummary {
-        try await RouteAnalyzer.analyse(GPXParser.parse(fixture(name)))
+        try await RouteAnalyzer.analyse(GPXParser.geometry(fixture(name)))
     }
 
     private func geometry(elevations: [Double]) -> RouteGeometry {

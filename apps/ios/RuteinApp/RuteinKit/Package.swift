@@ -12,11 +12,13 @@ let package = Package(
         .target(
             name: "RuteinKit",
             resources: [.process("Resources"), .process("DesignSystem/Resources")],
+            swiftSettings: [.enableUpcomingFeature("NonisolatedNonsendingByDefault")],
         ),
         .testTarget(
             name: "RuteinKitTests",
             dependencies: ["RuteinKit"],
             resources: [.process("Fixtures")],
+            swiftSettings: [.enableUpcomingFeature("NonisolatedNonsendingByDefault")],
         ),
     ],
 )

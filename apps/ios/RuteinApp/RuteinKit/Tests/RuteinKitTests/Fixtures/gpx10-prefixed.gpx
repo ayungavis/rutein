@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<g:gpx version="1.0" creator="Rutein fixtures" xmlns:g="http://www.topografix.com/GPX/1/0">
+  <g:rte>
+    <g:name>Prefixed Route</g:name>
+    <g:rtept lat="0.000" lon="0"><g:ele>100</g:ele></g:rtept>
+    <g:rtept lat="0.005" lon="0"><g:ele>150</g:ele></g:rtept>
+    <g:rtept lat="0.010" lon="0"><g:ele>210</g:ele></g:rtept>
+  </g:rte>
+</g:gpx>

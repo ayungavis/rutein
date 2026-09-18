@@ -5,6 +5,7 @@ public enum AppFont {
     public static let display = cormorant("Medium", size: 36, relativeTo: .title)
     public static let headline = Font.headline
     public static let subheadline = Font.subheadline
+    public static let subheadlineStrong = Font.subheadline.weight(.semibold)
     public static let footnote = Font.footnote
 
     static let isCormorantRegistered: Bool = {

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.0" creator="Rutein fixtures" xmlns="http://www.topografix.com/GPX/1/0">
+  <name>File level name that must not become a track name</name>
+  <url>https://example.invalid/route</url>
+  <urlname>Ten Zero Ladder</urlname>
+  <wpt lat="0.008993203637245378" lon="0">
+    <ele>140</ele>
+    <name>Spring</name>
+    <url>https://example.invalid/spring</url>
+  </wpt>
+  <trk>
+    <name>Ten Zero Ladder</name>
+    <number>1</number>
+    <trkseg>
+      <trkpt lat="0.000" lon="0"><ele>100</ele><time>2026-09-18T01:00:00Z</time><speed>1.4</speed><course>0</course></trkpt>
+      <trkpt lat="0.005" lon="0"><ele>120</ele><time>2026-09-18T01:05:00Z</time></trkpt>
+      <trkpt lat="0.010" lon="0"><ele>160</ele><time>2026-09-18T01:10:00Z</time></trkpt>
+      <trkpt lat="0.015" lon="0"><ele>200</ele><time>2026-09-18T01:15:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

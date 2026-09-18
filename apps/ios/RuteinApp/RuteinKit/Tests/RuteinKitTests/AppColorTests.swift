@@ -48,62 +48,53 @@ struct AppColorTests {
         .deletingLastPathComponent()
         .appending(path: "Sources/RuteinKit/DesignSystem/Resources/Colors.xcassets")
 
-    private static let tokens = ["background", "textPrimary", "textSecondary"]
+    private static let textTokens = ["textPrimary", "textSecondary"]
 
-    private func swatches(_ name: String) throws -> (light: Swatch, dark: Swatch) {
+    private func swatch(_ name: String) throws -> Swatch {
         let url = Self.catalogURL.appending(path: "\(name).colorset/Contents.json")
         let set = try JSONDecoder().decode(
             ColorSet.self,
             from: Data(contentsOf: url),
         )
+        let entry = try #require(set.colors.first)
 
-        func swatch(dark: Bool) throws -> Swatch {
-            let entry = try #require(set.colors.first { entry in
-                (entry.appearances?.contains { $0.value == "dark" } ?? false) == dark
-            })
+        #expect(entry.appearances == nil, "\(name) carries a dark appearance")
 
-            func channel(_ key: String) throws -> Double {
-                let raw = try #require(entry.color.components[key])
-                let byte = try #require(
-                    UInt8(raw.replacingOccurrences(of: "0x", with: ""), radix: 16),
-                )
+        func channel(_ key: String) throws -> Double {
+            let raw = try #require(entry.color.components[key])
+            let byte = try #require(
+                UInt8(raw.replacingOccurrences(of: "0x", with: ""), radix: 16),
+            )
 
-                return Double(byte) / 255
-            }
-
-            return try Swatch(red: channel("red"), green: channel("green"), blue: channel("blue"))
+            return Double(byte) / 255
         }
 
-        return try (swatch(dark: false), swatch(dark: true))
+        return try Swatch(red: channel("red"), green: channel("green"), blue: channel("blue"))
     }
 
-    @Test("Every token defines both appearances")
-    func everyTokenDefinesBothAppearances() throws {
-        for name in Self.tokens {
-            _ = try swatches(name)
+    @Test("Every token ships one appearance")
+    func everyTokenShipsOneAppearance() throws {
+        for name in Self.textTokens + ["bgBrandPrimary", "bgPrimary"] {
+            _ = try swatch(name)
         }
     }
 
-    @Test("Text meets WCAG AA agains the background in both appearances")
+    @Test("Text meets WCAG AA against the ground")
     func textContrastPassesAA() throws {
-        let background = try swatches("background")
+        let ground = try swatch("bgBrandPrimary")
 
-        for name in ["textPrimary", "textSecondary"] {
-            let text = try swatches(name)
-
-            #expect(text.light.contrast(against: background.light) >= 4.5, "\(name) light")
-            #expect(text.dark.contrast(against: background.dark) >= 4.5, "\(name) dark")
+        for name in Self.textTokens {
+            #expect(try swatch(name).contrast(against: ground) >= 4.5, "\(name)")
         }
     }
 
-    @Test("The hierarchy is the same strength in light and dark")
-    func hierarchyMatchesAcrossAppearances() throws {
-        let background = try swatches("background")
-        let secondary = try swatches("textSecondary")
+    @Test("Secondary text is quieter than primary")
+    func secondaryIsQuieterThanPrimary() throws {
+        let ground = try swatch("bgBrandPrimary")
 
-        let light = secondary.light.contrast(against: background.light)
-        let dark = secondary.dark.contrast(against: background.dark)
-
-        #expect(abs(light - dark) < 0.5, "light \(light), dark \(dark)")
+        #expect(
+            try swatch("textSecondary").contrast(against: ground)
+                < swatch("textPrimary").contrast(against: ground),
+        )
     }
 }

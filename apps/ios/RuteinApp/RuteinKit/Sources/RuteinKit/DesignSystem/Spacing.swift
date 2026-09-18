@@ -8,6 +8,5 @@ public enum Spacing {
     public static let xl2: CGFloat = 20
     public static let xl3: CGFloat = 24
     public static let xl4: CGFloat = 32
-    public static let section: CGFloat = 36
     public static let xl6: CGFloat = 48
 }

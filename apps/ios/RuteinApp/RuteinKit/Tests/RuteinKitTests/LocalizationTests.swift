@@ -11,7 +11,27 @@ private struct CatalogEntry: Decodable {
 }
 
 private struct CatalogLocalization: Decodable {
-    let stringUnit: CatalogUnit
+    let stringUnit: CatalogUnit?
+    let variations: CatalogVariations?
+
+    var values: [String] {
+        (stringUnit.map { [$0.value] } ?? []) + (variations?.values ?? [])
+    }
+}
+
+private struct CatalogVariations: Decodable {
+    let plural: [String: CatalogVariant]?
+    let device: [String: CatalogVariant]?
+
+    var values: [String] {
+        let cases = Array((plural ?? [:]).values) + Array((device ?? [:]).values)
+
+        return cases.compactMap { $0.stringUnit?.value }
+    }
+}
+
+private struct CatalogVariant: Decodable {
+    let stringUnit: CatalogUnit?
 }
 
 private struct CatalogUnit: Decodable {
@@ -36,10 +56,14 @@ struct LocalizationTests {
         #expect(try loadCatalog().sourceLanguage == "en")
     }
 
-    @Test("Every key carries an English value")
-    func everyKeyCarriesEnglish() throws {
+    @Test("Every key ships both shipping languages")
+    func everyKeyShipsBothLanguages() throws {
         for (key, entry) in try loadCatalog().strings {
-            #expect(entry.localizations["en"] != nil, "\(key) has no English value")
+            for language in ["en", "id"] {
+                let values = entry.localizations[language]?.values ?? []
+
+                #expect(!values.isEmpty, "\(key) has no \(language) value")
+            }
         }
     }
 
@@ -47,7 +71,23 @@ struct LocalizationTests {
     func noTranslationIsBlank() throws {
         for (key, entry) in try loadCatalog().strings {
             for (language, localization) in entry.localizations {
-                #expect(!localization.stringUnit.value.isEmpty, "\(key) is blank in \(language)")
+                for value in localization.values {
+                    #expect(!value.isEmpty, "\(key) is blank in \(language)")
+                }
+            }
+        }
+    }
+
+    @Test("A key that takes arguments numbers them, so a translator can reorder")
+    func argumentKeysArePositional() throws {
+        for (key, entry) in try loadCatalog().strings where key.contains("%@") {
+            for (language, localization) in entry.localizations {
+                for value in localization.values where value.contains("%") {
+                    #expect(
+                        !value.contains("%@"),
+                        "\(key) uses an unnumbered %@ in \(language): \(value)",
+                    )
+                }
             }
         }
     }

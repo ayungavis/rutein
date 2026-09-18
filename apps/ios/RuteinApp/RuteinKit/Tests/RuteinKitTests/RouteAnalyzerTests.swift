@@ -38,7 +38,7 @@ struct RouteAnalyzerTests {
 
     @Test("A gap between segments contributes no distance")
     func segmentGapContributesNothing() async throws {
-        let geometry = try await GPXParser.parse(fixture("two-segments"))
+        let geometry = try await GPXParser.geometry(fixture("two-segments"))
         let summary = try await RouteAnalyzer.analyse(geometry)
 
         #expect(abs(summary.distanceMetres - 2 * 111_195.080) < 1.0)
@@ -46,7 +46,7 @@ struct RouteAnalyzerTests {
 
     @Test("The real climb measures 12437.447 metres")
     func realRouteDistance() async throws {
-        let geometry = try await GPXParser.parse(fixture("wikiloc-mt-agung"))
+        let geometry = try await GPXParser.geometry(fixture("wikiloc-mt-agung"))
         let summary = try await RouteAnalyzer.analyse(geometry)
 
         #expect(abs(summary.distanceMetres - 12437.447) < Self.tolerance)
@@ -54,7 +54,7 @@ struct RouteAnalyzerTests {
 
     @Test("Repeating the analysis gives the same number")
     func analysisIsDeterministic() async throws {
-        let geometry = try await GPXParser.parse(fixture("wikiloc-mt-agung"))
+        let geometry = try await GPXParser.geometry(fixture("wikiloc-mt-agung"))
         let first = try await RouteAnalyzer.analyse(geometry)
         let second = try await RouteAnalyzer.analyse(geometry)
 

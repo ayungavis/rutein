@@ -3,7 +3,7 @@ APP_DIR    = apps/ios/RuteinApp
 PROJECT    = $(APP_DIR)/RuteinApp.xcodeproj
 PACKAGE    = $(APP_DIR)/RuteinKit
 SPEC       = project.yaml
-DEST       = platform=iOS Simulator,name=iPhone 17 Pro
+DEST       = generic/platform=iOS Simulator
 BUILD_LOG  = /tmp/rutein-build.log
 ARCHIVE    = /tmp/rutein/RuteinApp.xcarchive
 ARCH_LOG   = /tmp/rutein-archive.log
@@ -11,7 +11,7 @@ TEST_FLAGS ?=
 
 .DEFAULT_GOAL := help
 
-.PHONY: help hooks ios-generate ios-format ios-lint ios-previews ios-tokens ios-tokens-check ios-test ios-build ios-run ios-archive ios-validate
+.PHONY: help hooks ios-generate ios-format ios-lint ios-previews ios-location-check ios-concurrency-check ios-tokens ios-tokens-check ios-test ios-build ios-run ios-archive ios-validate
 
 help:
 	@echo "Rutein — GPX route preparation for trail runners."
@@ -34,8 +34,8 @@ ios-generate: ## Regenerate RuteinApp.xcodeproj from project.yaml
 ios-format: ## SwiftFormat the whole repo
 	swiftformat .
 
-ios-lint: ios-previews ios-tokens-check ## SwiftLint in strict mode, plus the preview and token checks
-	swiftlint --strict
+ios-lint: ios-previews ios-location-check ios-concurrency-check ios-tokens-check ## SwiftLint in strict mode, plus the preview, location, concurrency and token checks
+	swiftlint --strict --no-cache
 
 ios-previews: ## Every *View.swift must declare a #Preview
 	@missing=$$(grep -L '#Preview' $$(find $(PACKAGE)/Sources -name '*View.swift') 2>/dev/null); \
@@ -47,11 +47,36 @@ ios-previews: ## Every *View.swift must declare a #Preview
 	fi; \
 	echo "previews OK — every *View.swift declares a #Preview"
 
-ios-tokens: ## Regenerate Colors.xcassets from docs/design/tokens
-	@python3 tools/generate-colors.py
+ios-location-check: ## PRD section 6 FR-03 — viewing a route never asks for location
+	@hits=$$(grep -rlE 'MapUserLocationButton|CLLocationManager|CLServiceSession|CLBackgroundActivitySession|requestWhenInUseAuthorization|requestAlwaysAuthorization|CLLocationUpdate' \
+		$(PACKAGE)/Sources $(APP_DIR)/RuteinApp 2>/dev/null; \
+		grep -lE 'NSLocation[A-Za-z]*UsageDescription' $(APP_DIR)/$(SPEC) $(APP_DIR)/RuteinApp/Info.plist 2>/dev/null); \
+	if [ -n "$$hits" ]; then \
+		echo "Location authorization reached these files:"; \
+		echo "$$hits" | sed 's|^|  |'; \
+		echo "FR-03 forbids requesting location to view an imported route."; \
+		exit 1; \
+	fi; \
+	echo "location OK — nothing asks for location authorization"
 
-ios-tokens-check: ## Fail if Colors.xcassets drifted from docs/design/tokens
-	@python3 tools/generate-colors.py --check
+ios-concurrency-check: ## PRD section 9 — parsing and geometry stay off the main actor
+	@for symbol in "GPXParser.parse:Core/Utilities/GPXParser.swift" \
+		"RouteAnalyzer.analyse:Core/Utilities/RouteAnalyzer.swift"; do \
+		file=$(PACKAGE)/Sources/RuteinKit/$${symbol#*:}; \
+		if ! grep -B2 -E 'static func (parse|analyse)\(' $$file | grep -q '@concurrent'; then \
+			echo "$${symbol%%:*} is missing @concurrent."; \
+			echo "Since SE-0461 a plain nonisolated async function runs on the caller's actor,"; \
+			echo "which puts this work back on the main actor. See PRD section 9."; \
+			exit 1; \
+		fi; \
+	done; \
+	echo "concurrency OK — parsing and analysis carry @concurrent"
+
+ios-tokens: ## Regenerate Colors.xcassets from the Figma varzip exports
+	@python3 tools/generate-tokens.py
+
+ios-tokens-check: ## Fail if colours, spacing, radius or fonts drifted from the tokens
+	@python3 tools/generate-tokens.py --check
 
 ios-test: ## Unit tests via swift test — no simulator needed
 	swift test --package-path $(PACKAGE) $(TEST_FLAGS)
