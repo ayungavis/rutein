@@ -31,7 +31,7 @@ public enum RouteImportService {
     public static func suggestedName(for url: URL) -> String {
         url.deletingPathExtension().lastPathComponent
     }
-˝
+
     static func read(_ url: URL) throws -> Data {
         let scoped = url.startAccessingSecurityScopedResource()
 
