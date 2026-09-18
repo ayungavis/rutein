@@ -1,280 +1,184 @@
 # Rutein
 
-**Turn every route into a plan.**
+Turn a GPX file into a race-day plan.
 
-An iOS app for trail runners. Import a GPX file and Rutein reads the route —
-distance, climbing, the key climb, the elevation profile, the line on a map —
-then turns a target finish time into a checkpoint-by-checkpoint brief you can
-read at the trailhead or send to a friend.
+Import a route, read its real numbers, enter a target finish time, and get a
+checkpoint-by-checkpoint brief you can read at the trailhead or send to someone.
 
-Local only. No backend, no accounts, no network layer, no location permission.
+iOS 26, SwiftUI, Swift 6. Local only — no backend, no accounts, no network
+layer, and it never asks for your location.
 
 | | |
 | --- | --- |
-| **Platform** | iOS 26, iPhone · SwiftUI · Swift 6.3 in Swift 6 language mode, complete strict-concurrency checking |
-| **Built** | 9–18 September 2026 — seven build days plus a submission day, as an Apple Developer Academy solo challenge |
-| **Status** | All ten functional requirements implemented; shipped to TestFlight from CI. Dark mode is deliberately deferred — see [Known limits](#known-limits) |
-| **Scale** | 5,417 lines of Swift across 77 files · 2,763 lines of tests · **178 tests in 26 suites**, running in ~0.2 s with no simulator |
-| **Languages** | English and Bahasa Indonesia, 135 String Catalog keys |
+| Platform | iOS 26, iPhone. Swift 6 language mode, complete strict-concurrency checking |
+| Tests | 178 across 26 suites, ~0.2s, no simulator |
+| Size | 5,400 lines of Swift, 2,700 lines of tests |
+| Localization | English and Bahasa Indonesia |
+| Distribution | TestFlight, shipped from CI |
 
----
-
-## Screens
-
-> **Fill me in.** Capture these from the simulator or a device and drop them in
-> `docs/screenshots/`. Six is plenty; put the library, the route detail and the
-> brief first.
+<!-- Screenshots: drop PNGs in docs/screenshots/ and fill the cells below.
+     Library, route detail, brief. A short demo video is worth more than a sixth screenshot. -->
 
 | Library | Route detail | Brief |
 | --- | --- | --- |
-| _screenshot_ | _screenshot_ | _screenshot_ |
+| | | |
 
-> A 60–90 second demo video is the single highest-value thing to add here.
+## Features
 
----
+**Import.** GPX 1.1 and 1.0, tracks and routes, default and prefixed
+namespaces. A file with several usable tracks opens a picker instead of
+stitching them together. Parsing is cancellable and capped at 20 MiB, 100,000
+points and 1,000 waypoints, checked while reading rather than after.
 
-## What it does
+**Analysis.** Distance by Haversine at a fixed Earth radius. Ascent and descent
+through a three-sample median filter with a 3 m reversal threshold, so GPS noise
+does not inflate the climb. Coverage is reported as complete, partial or
+unavailable, and partial coverage is labelled rather than quietly averaged.
 
-**Import** — Pick a GPX from Files. Rutein supports GPX 1.1 and 1.0, tracks and
-routes, default and prefixed namespaces. If a file holds more than one usable
-track it asks which one rather than stitching them together. Parsing is
-cancellable and bounded: 20 MiB, 100,000 geometry points, 1,000 waypoints,
-enforced *while reading* rather than after.
+**Elevation profile.** Swift Charts, draggable. The readout gives distance,
+elevation and grade over a 100 m window. The line breaks at segment gaps and at
+missing samples instead of drawing across them. VoiceOver gets one adjustable
+value rather than 400 separate stops.
 
-**Understand the route** — Distance and ascent/descent from a documented
-Haversine + median-filter pipeline, an elevation profile you can drag to inspect
-any point (distance, elevation, and grade over a 100 m window), the route drawn
-on a map, and the key sustained climb named with its range, gain and average
-grade.
+**Map.** The route as a polyline, start and finish distinguished by shape rather
+than colour. Tapping opens a full-screen map with fit-to-route. Fits correctly
+across the antimeridian.
 
-**Plan it** — Enter a target elapsed time. Rutein derives average pace and, from
-`T × d / D`, an estimated time at every checkpoint. Optional start time with an
-explicit time zone; optional drink and fuel intervals.
+**Planner.** Target duration from 1 minute to 48 hours. Average pace and every
+checkpoint time come from `T × d / D`. Optional start time with an explicit IANA
+zone, optional drink and fuel intervals in whole minutes.
 
-**Read and share the brief** — An ordered timeline of Start, GPX checkpoints or
-generated distance markers, your intervals, and Finish. Share it as plain text
-or as a rendered card. The payload is previewed with a disclosure before any
-share sheet opens, and never contains a coordinate or the GPX itself.
+**Brief.** Start, GPX checkpoints or generated 5 km markers, your intervals,
+Finish. Waypoints more than 100 m off route get no estimate; waypoints sitting
+on a section the track covers twice are flagged ambiguous instead of guessed.
+Share as text or a rendered card, previewed first, never carrying coordinates or
+the GPX itself.
 
-**Keep it** — Routes and plans persist locally. The source GPX is copied into
-Application Support under an app-owned filename; reopening reparses it. Rename,
-delete, and duplicate detection by file fingerprint.
-
----
-
-## Why this repo might be worth five minutes
-
-This was a learning challenge, so the interesting part is not that the app
-works — it is what the repository does to *keep* it working.
-
-### Rules are build failures, not conventions
-
-`make ios-validate` runs format → lint → test → build. Six custom SwiftLint
-rules and four shell gates encode requirements that a reviewer would otherwise
-have to remember:
-
-| Gate | What it refuses to let through |
-| --- | --- |
-| `unauthorized_comment` | Any comment without one of five allowed prefixes. The codebase has no explanatory comments by design; reasoning lives in the decision notes. |
-| `literal_design_token` | A literal colour, font, spacing value, corner radius or shadow in a feature view. Tokens are defined in `DesignSystem/` and nowhere else. |
-| `no_parallel_logging` | A second `Logger`, `os_log`, `print` or `NSLog` outside `Core/Log.swift`. `Log` accepts only a stage, an `Int`, an `AppError` and an id it generates — so a route name cannot reach a log through it. |
-| `localized_text_needs_bundle` | A `Text("…")` that would resolve against the wrong bundle inside the package. |
-| `no_any_view` | `AnyView`. Type erasure for routine branching hides structure; use generics or `@ViewBuilder`. |
-| `no_untyped_dictionary` | `[String: Any]` in a domain API. |
-| `make ios-previews` | A `*View.swift` with no `#Preview`. SwiftLint cannot express it: custom rules flag matches, and this rule is about absence. |
-| `make ios-location-check` | `MapUserLocationButton`, a `CLLocationManager`, an authorization request, or an `NSLocation*UsageDescription` key. The app must never ask for location. |
-| `make ios-concurrency-check` | `GPXParser.parse` or `RouteAnalyzer.analyse` losing `@concurrent`. |
-| `make ios-tokens-check` | A hand-edited colour asset, a stale regeneration, or a colour set no design token generates. |
-
-Most of these were broken on purpose to confirm they fail before being trusted,
-and the mutation is recorded in the step note that added them. Two earned their
-keep immediately: the token check caught a colour copied from the wrong design
-file, and the design-token rule turned out not to be running at all because
-SwiftLint had served a cached result — which is why `ios-lint` passes
-`--no-cache`.
-
-### Design tokens are generated from the Figma export
-
-`tools/generate-tokens.py` reads the Figma variables export committed in
-`docs/design/tokens/` and generates `Colors.xcassets`, then verifies the
-hand-written `Spacing`, `Radius` and font families against the same source.
-A colour that drifts from the design file fails the build rather than the
-review.
-
-### A concurrency rule that turned out to be false
-
-The project documentation asserted that since SE-0461 a plain `nonisolated async`
-function runs on the caller's actor, so `@concurrent` was what kept GPX parsing
-off the main thread. Writing the test the architecture demanded — two functions
-differing only by the annotation — showed the plain one hopping off-main too:
-SE-0461's behaviour needs the `NonisolatedNonsendingByDefault` upcoming feature,
-which was never enabled. For twenty-nine steps `@concurrent` had been
-decorative. The feature is enabled now, so the rule is load-bearing, and the
-documentation records what it depends on.
-
-[Step 30](docs/steps/30-observability.md) has the measurement.
-
-### Persistence with real schema versions
-
-Three `VersionedSchema` versions and two lightweight migration stages, versioned
-from the first persisted schema rather than retrofitted once a migration hurt. The V1→V2 migration test writes a genuine
-V1 store to disk and reopens it through the plan — and it runs as a **Swift
-Testing exit test**, in its own child process, because two SwiftData schemas
-declaring the same entity name abort the whole test run when they are live
-concurrently. That keeps the other 177 tests parallel.
-
-### Decisions are written down while they are being made
-
-[`docs/steps/`](docs/steps/) holds **31 notes**, one per implementation step,
-each recording what changed, which PRD requirement demanded it, *what was
-rejected and on what evidence*, the code, and how to verify it. They exist for
-the part git cannot hold. A few that show the shape:
-
-- [08 — Distance, and the analysis boundary](docs/steps/08-distance-engine.md)
-- [17 — Import a GPX and read its numbers](docs/steps/17-import-to-detail.md) — the
-  step that caught `Measurement.formatted` silently rendering 12 437 m as
-  **7.7 mi** under a US locale
-- [23 — Waypoints, and what a real out-and-back does to them](docs/steps/23-checkpoints.md) — where
-  the spec met a real Wikiloc export and produced a thin timeline, recorded
-  rather than worked around
-- [26 — Point inspection, and a chart that stopped lying about gaps](docs/steps/26-point-inspection.md)
-
----
+**Storage.** SwiftData, with the source GPX copied into Application Support
+under an app-owned filename. Rename, delete, duplicate detection by file
+fingerprint, orphan file cleanup.
 
 ## Architecture
 
-MVVM with a single Swift package. `View ← ViewModel ← Repository ← Service`,
-one direction only.
+MVVM. `View ← ViewModel ← Repository ← Service`, one direction.
 
 ```
 apps/ios/RuteinApp/
-├── RuteinApp/              iOS app shell — project.yaml, xcconfig, Info.plist, app icon
-└── RuteinKit/              one Swift package, where almost all the code lives
+├── RuteinApp/                  app shell: project.yaml, xcconfig, Info.plist, icon
+└── RuteinKit/                  one Swift package holding almost all the code
     └── Sources/RuteinKit/
-        ├── App/            AppContainer (composition root), RootView
-        ├── Core/           AppError, Loadable, Log
-        │   ├── Domains/    domain value types, all Sendable — no reference semantics here
-        │   ├── Repositories/  protocol + SwiftData implementation + 3 schema versions
-        │   ├── Services/   file store
-        │   └── Utilities/  GPX parser, Haversine, elevation analysis, checkpoints, formatting
-        ├── DesignSystem/   AppColor, AppFont, Spacing, Radius, generated Colors.xcassets
-        └── Features/       RouteLibrary, RouteDetail, RoutePlanner, RouteBrief
+        ├── App/                AppContainer, RootView
+        ├── Core/
+        │   ├── Domains/        value types, all Sendable
+        │   ├── Repositories/   protocol, SwiftData impl, 3 schema versions
+        │   ├── Services/       file store
+        │   └── Utilities/      GPX parser, Haversine, elevation, checkpoints, formatting
+        ├── DesignSystem/       AppColor, AppFont, Spacing, Radius, generated colour assets
+        └── Features/           RouteLibrary, RouteDetail, RoutePlanner, RouteBrief
 ```
 
-Binding rules the code is held to:
+- ViewModels are `@MainActor @Observable`, owned by their view as
+  `@State private`, injected through `AppContainer`. Never built in a view body.
+- Async state is one `Loadable<T>`: `idle`, `loading(previous:)`, `loaded`,
+  `failed(AppError, previous:)`. No `isLoading` + `data?` + `error?` triples.
+  That is why a failed reload keeps the list on screen instead of blanking it.
+- Parsing and geometry are `@concurrent async` over `Sendable` values. Not
+  actors: they hold no mutable state, so an actor would serialize nothing.
+- `DesignSystem/` cannot import `Core/` or `Features/`. A component promoted
+  there takes primitives, not domain types.
+- Code used by one feature stays in that feature. It moves to `Core/` when a
+  second caller appears, not before.
+- No networking layer, no `Infrastructure/` layer.
 
-- Every feature is `<Name>View.swift` + `<Name>ViewModel.swift`. ViewModels are
-  `@MainActor @Observable`, owned by their view as `@State private`, and
-  injected — never constructed in a view body.
-- Async state is one `Loadable<T>` (`idle` / `loading(previous:)` / `loaded` /
-  `failed(AppError, previous:)`), never an `isLoading` + `data?` + `error?`
-  triple. That is why a failed reload keeps the list already on screen instead
-  of blanking it.
-- Parsing and geometry are `@concurrent async` functions over `Sendable` values
-  — not actors, because they hold no mutable state.
-- `DesignSystem/` may not import `Core/` or `Features/`, so a component promoted
-  there takes primitives, never domain types.
-- **Placement follows use.** Code used by one feature lives in that feature;
-  code with a second caller moves to `Core/`. It moves when the second caller
-  appears, not in anticipation.
-- No `Infrastructure/` layer and no networking layer. Building one to mirror a
-  reference diagram is explicitly forbidden.
+## Enforcement
 
----
+`make ios-validate` runs format → lint → test → build. Ten checks fail the build
+instead of relying on review:
 
-## How correctness is checked
+| Check | Fails on |
+| --- | --- |
+| `unauthorized_comment` | any comment outside five allowed prefixes |
+| `literal_design_token` | a literal colour, font, spacing, radius or shadow in a feature view |
+| `no_parallel_logging` | a second `Logger`, `os_log`, `print` or `NSLog` outside `Core/Log.swift` |
+| `localized_text_needs_bundle` | a `Text("…")` resolving against the wrong bundle |
+| `no_any_view` / `no_untyped_dictionary` | `AnyView`, or `[String: Any]` in a domain API |
+| `make ios-previews` | a `*View.swift` with no `#Preview` |
+| `make ios-location-check` | `MapUserLocationButton`, `CLLocationManager`, an authorization request, an `NSLocation*` plist key |
+| `make ios-concurrency-check` | `GPXParser.parse` or `RouteAnalyzer.analyse` losing `@concurrent` |
+| `make ios-tokens-check` | a hand-edited colour asset, or one no design token generates |
 
-```bash
-make ios-validate     # format → lint (+ 4 gates) → test → build
-```
+Colour assets are generated from the Figma variables export by
+`tools/generate-tokens.py`, which then verifies `Spacing`, `Radius` and the font
+families against the same source. A colour that drifts from the design file
+fails the build.
 
-**178 tests in 26 suites**, written with Swift Testing and running on the host
-via `swift test` — no simulator boot, so the whole suite finishes in about
-0.2 seconds. `macOS` is declared as a package platform for exactly that reason.
+`Log` takes a stage, an `Int`, an `AppError` and an id it generates itself.
+There is nowhere to put a route name, so route data cannot reach a log.
 
-Numbers in tests are independently calculated, not read back from the code they
-check. The Mt Agung fixture's 12,437.447 m was computed in Python before the
-Swift engine existed, and it is still the number the suite asserts. 14 GPX
-fixtures cover malformed XML, waypoint-only files, missing and partial
-elevation, two segments, two tracks, a route-only file, a prefixed namespace,
-GPX 1.0, and one real 34 KB Wikiloc export of Mount Agung.
+## Tests
 
-CI runs the same validation on every push and ships to TestFlight from
-`main` ([`.github/workflows/`](.github/workflows/)).
+178 tests in 26 suites, Swift Testing, run on the host with `swift test`. macOS
+is a package platform purely so the suite needs no simulator; the whole run
+finishes in about 0.2 seconds.
 
----
+Expected values are calculated independently rather than read back from the code
+under test. The Mount Agung fixture's 12,437.447 m was worked out in Python
+before the Swift engine existed, and it is still what the suite asserts.
 
-## Running it
+14 GPX fixtures: malformed XML, waypoint-only, missing and partial elevation,
+two segments, two tracks, route-only, prefixed namespace, GPX 1.0, and a real
+34 KB Wikiloc export of Mount Agung.
 
-Requires Xcode 26.6, Swift 6.3.3, and [XcodeGen](https://github.com/yonaskolb/XcodeGen),
-[SwiftLint](https://github.com/realm/SwiftLint), [SwiftFormat](https://github.com/nicklockwood/SwiftFormat).
+Two worth calling out:
+
+- The SwiftData V1→V2 migration test writes a real V1 store to disk and reopens
+  it through the migration plan. It runs as an exit test in a child process,
+  because two schemas declaring the same entity name abort the whole run when
+  both are live. The other 177 tests stay parallel.
+- `OffMainExecutionTests` compares two functions differing only by
+  `@concurrent`. Writing it showed the plain `nonisolated async` one also left
+  the main actor, so `@concurrent` was doing nothing — SE-0461's caller-actor
+  behaviour needs `NonisolatedNonsendingByDefault`, which was never enabled.
+  It is now, so the annotation is load-bearing.
+
+## Build and run
+
+Needs Xcode 26.6 and:
 
 ```bash
 brew install xcodegen swiftlint swiftformat
-make ios-generate     # RuteinApp.xcodeproj is generated, never committed
-make ios-test         # unit tests, no simulator needed
-make ios-run          # build, install and launch on the booted simulator
-make help             # everything else
 ```
 
-There is a real GPX committed at
+Then:
+
+```bash
+make ios-generate     # .xcodeproj is generated, never committed
+make ios-test         # no simulator needed
+make ios-run          # build, install, launch on the booted simulator
+make help
+```
+
+A real route is committed at
 `apps/ios/RuteinApp/RuteinKit/Tests/RuteinKitTests/Fixtures/wikiloc-mt-agung.gpx`
-— a public Wikiloc export of Mount Agung via Pura Pengubengan. Copy it into the
-simulator's Files app and import it; it should read 12.4 km and +1,872 m.
+— Mount Agung via Pura Pengubengan. Copy it into the simulator's Files app and
+import it. It reads 12.4 km and +1,872 m.
 
----
+## Limits
 
-## Known limits
-
-Stated plainly, because the PRD requires deferred scope to be explicit rather
-than implied.
-
-- **Dark mode is deferred.** The app is locked to light and the release check is
-  that it *stays* light with the device set to dark — not that a dark palette
-  reads well. The design file has no dark column, and deriving one would have
-  meant inventing values. [Step 16](docs/steps/16-light-only-palette.md) records
-  the reasoning and the PRD amendment.
+- **No dark mode.** The app is locked to light. The design file has no dark
+  column, and deriving one would have meant inventing values.
 - **Basemap tile failure is not detected.** SwiftUI's `Map` exposes no failure
-  signal. Offline, the route polyline and its endpoints still draw from vector
-  data and every metric still reads; the fallback block appears when a route has
-  no plottable coordinates. The upgrade path is an `MKMapView` wrapper.
-- **An out-and-back can produce a thin timeline.** Waypoints on a section the
-  track covers twice are marked ambiguous and omitted from timing, per the
-  analysis contract. On the Mount Agung export that is 6 of 7 waypoints.
-  [Step 23](docs/steps/23-checkpoints.md) measures it and proposes an amendment.
-- **Performance budgets are targets, not results.** Nothing in this repository
-  claims a measured launch time, frame rate or memory figure.
-- No multiple plans per route, no checkpoint editing, no terrain-aware timing,
-  no offline basemaps, no live tracking. Those are scoped out, not missing.
+  signal. Offline, the polyline and endpoints still draw from vector data and
+  every metric still reads.
+- **An out-and-back can produce a short timeline.** Waypoints on a section
+  covered twice are left out of timing by design. On the Mount Agung file that
+  is 6 of 7 waypoints.
+- **No measured performance figures.** Nothing here claims a launch time, frame
+  rate or memory number.
+- Out of scope: multiple plans per route, checkpoint editing, terrain-aware
+  timing, offline basemaps, live tracking.
 
----
+## Author
 
-## Repository map
-
-| Path | What it holds |
-| --- | --- |
-| [`docs/prd.md`](docs/prd.md) | The product requirements document — the behavioural source of truth. When code and PRD disagree, the PRD wins and the stale side gets fixed. |
-| [`docs/steps/`](docs/steps/) | 31 implementation notes: what changed, why, what was rejected, and how to verify |
-| [`docs/design/tokens/`](docs/design/tokens/) | Figma variable exports the design tokens are generated from |
-| [`tools/generate-tokens.py`](tools/generate-tokens.py) | Generates and verifies `Colors.xcassets`, spacing, radius and fonts |
-| [`Makefile`](Makefile) | Every command, including the build gates |
-| [`.swiftlint.yml`](.swiftlint.yml) | Six custom rules encoding PRD requirements |
-| [`CLAUDE.md`](CLAUDE.md) | Working conventions for this repository |
-
----
-
-## Context
-
-Rutein was built as a solo challenge at the Apple Developer Academy, from a
-written PRD accepted before any code existed. The PRD, the decision notes, and
-the build gates are the deliverable as much as the app is: the exercise was to
-find out whether writing the requirement down first, and then making the
-requirement mechanically enforceable, actually changes what gets built.
-
-It did. Several of the notes record the PRD catching the implementation —
-including one where a formatter would have shown a 12 km route as 7.7 miles to
-every American user, and one where the chart was drawing terrain that was not in
-the file.
-
-**Author** — Wahyu Kurniawan · [`docs/prd.md`](docs/prd.md) for the full
-specification.
+Wahyu Kurniawan. Built as a solo challenge at the Apple Developer Academy,
+9–18 September 2026.
