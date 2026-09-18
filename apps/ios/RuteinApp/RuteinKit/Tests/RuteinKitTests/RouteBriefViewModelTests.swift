@@ -80,16 +80,17 @@ struct RouteBriefViewModelTests {
         #expect(viewModel.targetDuration == RouteFormat.duration(18000))
     }
 
-    @Test("The shared text carries the name, the estimate method and every timeline row")
+    @Test("The shared text carries the name, a header block and every timeline row")
     func shareTextCarriesTheBrief() throws {
         let viewModel = try viewModel(drink: 30)
         let lines = viewModel.shareText.split(separator: "\n", omittingEmptySubsequences: false)
+        let header = lines.prefix { !$0.isEmpty }
 
         #expect(lines.first == "Ridge Loop")
-        #expect(viewModel.shareText.contains("Distance-based estimate"))
         #expect(viewModel.shareText.contains(RouteFormat.distance(20000)))
         #expect(viewModel.rows.allSatisfy { viewModel.shareText.contains($0.offset) })
-        #expect(lines.count >= viewModel.rows.count + 5)
+        #expect(header.count == 5)
+        #expect(lines.count == header.count + 1 + viewModel.rows.count)
     }
 
     @Test("The shared text never leaks a coordinate or the GPX itself")
@@ -102,29 +103,47 @@ struct RouteBriefViewModelTests {
         #expect(!text.contains("trkpt"))
     }
 
-    @Test("Without a start time every row stays an offset")
+    @Test("Without a start time every row is a relative offset")
     func withoutAStartTimeRowsStayRelative() throws {
-        let rows = try viewModel(drink: 30).rows
+        let viewModel = try viewModel(drink: 30)
 
-        #expect(rows.allSatisfy { $0.offset.hasPrefix("+") })
-        #expect(rows.first?.offset == "+\(RouteFormat.offset(0))")
+        for (row, event) in zip(viewModel.rows, viewModel.events) {
+            #expect(row.offset.contains(RouteFormat.offset(event.elapsedSeconds)))
+        }
     }
 
-    @Test("With a start time the rows carry arrival times instead")
+    @Test("With a start time the rows carry local arrival times instead")
     func withAStartTimeRowsCarryArrivals() throws {
         let start = Date(timeIntervalSince1970: 1_758_000_000)
+        let zone = try #require(TimeZone(identifier: "Asia/Makassar"))
         let viewModel = try viewModel(start: start)
 
-        #expect(viewModel.rows.allSatisfy { !$0.offset.hasPrefix("+") })
-        #expect(viewModel.shareText.contains("Start"))
+        for (row, event) in zip(viewModel.rows, viewModel.events) {
+            let arrival = RouteFormat.arrival(
+                start.addingTimeInterval(event.elapsedSeconds),
+                in: zone,
+            )
+
+            #expect(row.offset == arrival)
+        }
     }
 
-    @Test("A route with no usable waypoints says its markers are not aid stations")
+    @Test("A route with no usable waypoints adds the aid-station warning to the payload")
     func markerNoticeAppearsOnlyForMarkers() throws {
-        #expect(try viewModel(named: false).usesDistanceMarkers)
-        #expect(try !viewModel(named: true).usesDistanceMarkers)
-        #expect(try viewModel(named: false).shareText.contains("not aid stations"))
-        #expect(try !viewModel(named: true).shareText.contains("not aid stations"))
+        let markers = try viewModel(named: false)
+        let checkpoints = try viewModel(named: true)
+
+        #expect(markers.usesDistanceMarkers)
+        #expect(!checkpoints.usesDistanceMarkers)
+        #expect(header(of: markers).count == header(of: checkpoints).count + 1)
+    }
+
+    private func header(of viewModel: RouteBriefViewModel) -> [Substring] {
+        Array(
+            viewModel.shareText
+                .split(separator: "\n", omittingEmptySubsequences: false)
+                .prefix { !$0.isEmpty },
+        )
     }
 
     @Test("Saving a plan on an unsaved route stores the route and the plan together")
@@ -199,7 +218,7 @@ struct RouteBriefViewModelTests {
         let text = long.shareText
 
         #expect(long.rows.allSatisfy { text.contains($0.offset) })
-        #expect(text.contains("Distance-based estimate"))
+        #expect(long.rows.count == 578)
     }
 
     @Test("Opening and cancelling the share preview changes nothing")
