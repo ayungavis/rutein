@@ -8,6 +8,8 @@ on:
       - "Makefile"
       - ".swiftlint.yml"
       - ".swiftformat"
+      - "tools/**"
+      - "docs/design/tokens/**"
       - ".github/workflows/testflight.yml"
   workflow_dispatch:
 
